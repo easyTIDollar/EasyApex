@@ -26,7 +26,7 @@ EasyApex 是一款专为《Apex 英雄》玩家打造的轻量级战绩查询工
 
 本项目使用 Kotlin + Jetpack Compose 构建，采用现代化的 MVVM 架构。
 
-- **API 支持**：数据来源于 [apexlegendsstatus.com](https://apexlegendsstatus.com/) 非官方 API。
+- **API 支持**：数据来源于 [apexlegendsapi.com](https://portal.apexlegendsapi.com/) 非官方 API。
 
 ## ⚖️ 免责声明
 
