@@ -130,7 +130,7 @@ fun SettingsDialog(
         },
         confirmButton = {
             Button(onClick = {
-                val githubUrl = "https://github.com/你的用户名/EasyApex/releases"
+                val githubUrl = "https://github.com/easyTIDollar/EasyApex/releases"
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl))
                 context.startActivity(intent)
             }) {
