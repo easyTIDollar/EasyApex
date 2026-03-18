@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.jussicodes.easyapex.ui.theme.AppTheme // 🌟 修复 AppTheme 报错
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,10 +19,15 @@ sealed class ApiState<out T> {
 
 class ApexViewModel(application: Application) : AndroidViewModel(application) {
 
+    // 记得在公开源码前把这个 Key 拿掉或者弄成配置文件！
     private val API_KEY = "018fb4bd2975c737286d02b2ed3f450a"
 
     private val prefs = application.getSharedPreferences("apex_prefs", Context.MODE_PRIVATE)
     private val HISTORY_KEY = "search_history"
+    private val THEME_KEY = "app_theme_preference"
+
+    private val _currentTheme = MutableStateFlow(AppTheme.DYNAMIC)
+    val currentTheme: StateFlow<AppTheme> = _currentTheme.asStateFlow()
 
     private val _searchHistory = MutableStateFlow<List<String>>(emptyList())
     val searchHistory: StateFlow<List<String>> = _searchHistory.asStateFlow()
@@ -40,6 +46,17 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         loadHistory()
+        loadTheme()
+    }
+
+    private fun loadTheme() {
+        val savedThemeName = prefs.getString(THEME_KEY, AppTheme.DYNAMIC.name)
+        _currentTheme.value = AppTheme.valueOf(savedThemeName ?: "DYNAMIC")
+    }
+
+    fun setTheme(theme: AppTheme) {
+        _currentTheme.value = theme
+        prefs.edit().putString(THEME_KEY, theme.name).apply()
     }
 
     private fun loadHistory() {
@@ -65,31 +82,24 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString(HISTORY_KEY, currentList.joinToString(",")).apply()
     }
 
-    // ================= 🌟 智能 API 调用逻辑 🌟 =================
-
     fun searchPlayer(searchInput: String) {
         if (searchInput.isBlank()) return
 
         _playerState.value = ApiState.Loading
         viewModelScope.launch {
             try {
-                // 判断用户输入的是纯数字(UID)还是字母(名字)
                 val isUid = searchInput.all { it.isDigit() }
                 var finalUid = if (isUid) searchInput else ""
 
-                // 如果是名字，先在后台悄悄调接口把它转换成 UID
                 if (!isUid) {
                     try {
                         val uidResponse = RetrofitClient.api.nameToUid(API_KEY, searchInput, "PC")
                         if (!uidResponse.uid.isNullOrEmpty()) {
-                            finalUid = uidResponse.uid // 成功拿到隐藏的 UID！
+                            finalUid = uidResponse.uid
                         }
-                    } catch (e: Exception) {
-                        // 如果转 UID 的接口挂了，我们忽略报错，一会兜底直接用名字查
-                    }
+                    } catch (e: Exception) {}
                 }
 
-                // 核心查询逻辑：优先用 UID 查，如果拿不到 UID 才用名字查
                 val response = if (finalUid.isNotEmpty()) {
                     RetrofitClient.api.getPlayerProfileByUid(API_KEY, finalUid, "PC")
                 } else {
@@ -97,8 +107,6 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 _playerState.value = ApiState.Success(response)
-
-                // 成功后保存原始输入到历史记录
                 saveToHistory(searchInput)
 
             } catch (e: Exception) {
@@ -107,7 +115,6 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // ... 下方保留其他接口 ...
     fun fetchMapRotation(forceRefresh: Boolean = false) {
         if (!forceRefresh && _mapState.value is ApiState.Success) return
         _mapState.value = ApiState.Loading

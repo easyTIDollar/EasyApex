@@ -1,5 +1,7 @@
 package com.jussicodes.easyapex
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,25 +20,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jussicodes.easyapex.ui.theme.AppTheme // 🌟 导入你的主题
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ApexMainScreen(viewModel: ApexViewModel = viewModel()) {
+fun ApexMainScreen(viewModel: ApexViewModel) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("玩家", "地图", "猎杀", "服务器")
     val icons = listOf(Icons.Default.Person, Icons.Default.Place, Icons.Default.Star, Icons.Default.Info)
 
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    val currentTheme by viewModel.currentTheme.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("EasyTracker - ${tabs[selectedTab]}") },
+                title = { Text("EasyApex - ${tabs[selectedTab]}") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                ),
+                actions = {
+                    IconButton(onClick = { showSettingsDialog = true }) {
+                        Icon(Icons.Default.Settings, contentDescription = "设置")
+                    }
+                }
             )
         },
         bottomBar = {
@@ -52,11 +63,7 @@ fun ApexMainScreen(viewModel: ApexViewModel = viewModel()) {
             }
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when (selectedTab) {
                 0 -> PlayerSearchScreen(viewModel)
                 1 -> MapRotationScreen(viewModel)
@@ -64,7 +71,76 @@ fun ApexMainScreen(viewModel: ApexViewModel = viewModel()) {
                 3 -> ServerStatusScreen(viewModel)
             }
         }
+
+        if (showSettingsDialog) {
+            SettingsDialog(
+                currentTheme = currentTheme,
+                onThemeChange = { newTheme -> viewModel.setTheme(newTheme) },
+                onDismiss = { showSettingsDialog = false }
+            )
+        }
     }
+}
+
+// ================= 设置弹窗 =================
+@Composable
+fun SettingsDialog(
+    currentTheme: AppTheme,
+    onThemeChange: (AppTheme) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("设置与关于", fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("主题配色", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    AppTheme.values().forEach { themeOption ->
+                        FilterChip(
+                            selected = currentTheme == themeOption,
+                            onClick = { onThemeChange(themeOption) },
+                            label = { Text(themeOption.displayName) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("关于 EasyApex", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "一款轻量、便捷的《Apex 英雄》非官方数据查询工具。支持 Origin ID 及底层 UID 智能查询，提供最新地图轮换与猎杀者门槛数据。\n\n数据来源: apexlegendsstatus.com",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val githubUrl = "https://github.com/你的用户名/EasyApex/releases"
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl))
+                context.startActivity(intent)
+            }) {
+                Text("检查更新")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
 }
 
 // ================= 1. 玩家查询页面 =================
@@ -75,24 +151,14 @@ fun PlayerSearchScreen(viewModel: ApexViewModel) {
     val uiState by viewModel.playerState.collectAsState()
     val searchHistory by viewModel.searchHistory.collectAsState()
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         OutlinedTextField(
-            value = playerName,
-            onValueChange = { playerName = it },
-            label = { Text("输入 EA 名字 或 UID") }, // 🌟 提示修改
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            value = playerName, onValueChange = { playerName = it },
+            label = { Text("输入 EA 名字 或 UID") },
+            modifier = Modifier.fillMaxWidth(), singleLine = true
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { viewModel.searchPlayer(playerName) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Button(onClick = { viewModel.searchPlayer(playerName) }, modifier = Modifier.fillMaxWidth()) {
             Text("查询战绩")
         }
 
@@ -102,20 +168,14 @@ fun PlayerSearchScreen(viewModel: ApexViewModel) {
                 Text("搜索历史", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.outline)
             }
             Spacer(modifier = Modifier.height(8.dp))
-
             LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(searchHistory) { historyName ->
                     InputChip(
                         selected = false,
-                        onClick = {
-                            playerName = historyName
-                            viewModel.searchPlayer(historyName)
-                        },
+                        onClick = { playerName = historyName; viewModel.searchPlayer(historyName) },
                         label = { Text(historyName) },
                         trailingIcon = {
-                            Icon(Icons.Default.Close, contentDescription = "删除",
-                                modifier = Modifier.size(16.dp).clickable { viewModel.removeHistoryItem(historyName) }
-                            )
+                            Icon(Icons.Default.Close, contentDescription = "删除", modifier = Modifier.size(16.dp).clickable { viewModel.removeHistoryItem(historyName) })
                         }
                     )
                 }
@@ -139,10 +199,7 @@ fun PlayerResultCard(playerData: PlayerResponse) {
     val realtime = playerData.realtime
     val legends = playerData.legends
 
-    if (global == null) {
-        Text("未获取到玩家详细数据")
-        return
-    }
+    if (global == null) { Text("未获取到玩家详细数据"); return }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.elevatedCardElevation(6.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -240,9 +297,9 @@ fun MapRotationScreen(viewModel: ApexViewModel) {
                 is ApiState.Loading -> if (!pullToRefreshState.isRefreshing) CircularProgressIndicator()
                 is ApiState.Error -> Text(state.message, color = MaterialTheme.colorScheme.error)
                 is ApiState.Success -> {
-                    MapCard("大逃杀 (匹配)", state.data.battle_royale)
+                    MapCard("匹配地图轮换", state.data.battle_royale)
                     Spacer(modifier = Modifier.height(16.dp))
-                    MapCard("大逃杀 (排位)", state.data.ranked)
+                    MapCard("排位地图轮换", state.data.ranked)
                 }
                 is ApiState.Idle -> {}
             }
