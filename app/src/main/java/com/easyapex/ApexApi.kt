@@ -25,7 +25,7 @@ data class LegendsStats(val selected: SelectedLegend?)
 data class SelectedLegend(val LegendName: String, val data: List<TrackerData>?)
 data class TrackerData(val name: String, val value: Float)
 
-// --- 🌟 新增：名字转 UID 响应数据 ---
+// --- ?? 新增：名字转 UID 响应数据 ---
 data class UidResponse(
     val name: String?,
     val uid: String?
@@ -58,7 +58,7 @@ data class PredatorDetails(
 
 // ================= 2. API 接口定义 =================
 interface ApexApi {
-    // 🌟 1. 通过名字查询 (兜底备用)
+    // ?? 1. 通过名字查询 (兜底备用)
     @GET("bridge")
     suspend fun getPlayerProfileByName(
         @Query("auth") auth: String,
@@ -66,7 +66,7 @@ interface ApexApi {
         @Query("platform") platform: String
     ): PlayerResponse
 
-    // 🌟 2. 通过 UID 查询 (最稳定)
+    // ?? 2. 通过 UID 查询 (最稳定)
     @GET("bridge")
     suspend fun getPlayerProfileByUid(
         @Query("auth") auth: String,
@@ -74,7 +74,7 @@ interface ApexApi {
         @Query("platform") platform: String
     ): PlayerResponse
 
-    // 🌟 3. 将 EA 名字转换为底层 UID
+    // ?? 3. 将 EA 名字转换为底层 UID
     @GET("nametouid")
     suspend fun nameToUid(
         @Query("auth") auth: String,
@@ -101,4 +101,39 @@ object RetrofitClient {
             .build()
             .create(ApexApi::class.java)
     }
+}
+
+// ================= 4. GitHub Release 数据模型 =================
+data class GitHubRelease(
+    val tag_name: String,
+    val name: String,
+    val body: String,
+    val html_url: String,
+    val created_at: String,
+    val assets: List<GitHubReleaseAsset>
+)
+
+data class GitHubReleaseAsset(
+    val name: String,
+    val browser_download_url: String,
+    val size: Int
+)
+
+// ================= 5. GitHub API 客户端 =================
+object GitHubApiClient {
+    private const val BASE_URL = "https://api.github.com/"
+
+    val api: ApexGithubApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApexGithubApi::class.java)
+    }
+}
+
+interface ApexGithubApi {
+    /** 获取最新版本 Release 信息 */
+    @GET("repos/easyTIDollar/EasyApex/releases/latest")
+    suspend fun getLatestRelease(): GitHubRelease
 }

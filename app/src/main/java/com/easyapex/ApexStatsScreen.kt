@@ -71,23 +71,18 @@ fun ApexMainScreen(viewModel: ApexViewModel) {
         }
 
         if (showSettingsDialog) {
-            SettingsDialog(
-                currentTheme = currentTheme,
-                onThemeChange = { newTheme -> viewModel.setTheme(newTheme) },
-                onDismiss = { showSettingsDialog = false }
-            )
-        }
-    }
-}
+                    SettingsDialog(currentTheme = currentTheme, onThemeChange = { newTheme -> viewModel.setTheme(newTheme) }, onDismiss = { showSettingsDialog = false }, viewModel = viewModel)
 
-// ================= 设置弹窗 =================
+
 @Composable
 fun SettingsDialog(
     currentTheme: AppTheme,
     onThemeChange: (AppTheme) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    viewModel: ApexViewModel
 ) {
     val context = LocalContext.current
+    val updateState by viewModel.updateState.collectAsState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -124,15 +119,114 @@ fun SettingsDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("版本更新", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                when (val state = updateState) {
+                    is UpdateState.Idle -> {
+                        Text("点击检查更新按钮查看是否有新版本", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    is UpdateState.Checking -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("正在检查更新...", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    is UpdateState.NewUpdateAvailable -> {
+                        Column {
+                            Text(
+                                text = "发现新版本: v${state.version}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = state.releaseName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = state.releaseNotes,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 4
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val sizeStr = if (state.fileSize > 0) {
+                                val mb = state.fileSize / (1024.0 * 1024.0)
+                                String.format("大小: %.1f MB", mb)
+                            } else "未知大小"
+                            Text(text = sizeStr, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                    }
+                    is UpdateState.DownloadInProgress -> {
+                        Column {
+                            Text(
+                                text = "下载中: ${state.progress}%",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = state.progress / 100f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val downloadedMB = state.downloadedBytes / (1024.0 * 1024.0)
+                            val totalMB = if (state.totalBytes > 0) state.totalBytes / (1024.0 * 1024.0) else 0.0
+                            Text(
+                                text = String.format("%.1f MB / %.1f MB", downloadedMB, totalMB),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                    is UpdateState.UpToDate -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("您已是最新版本 v${viewModel.versionName.value}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    is UpdateState.Error -> {
+                        Text(state.message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                    }
+                    else -> {}
+                }
             }
         },
         confirmButton = {
-            Button(onClick = {
-                val githubUrl = "https://github.com/easyTIDollar/EasyApex/releases"
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl))
-                context.startActivity(intent)
-            }) {
-                Text("检查更新")
+            when (updateState) {
+                is UpdateState.NewUpdateAvailable -> {
+                    Button(onClick = {
+                        viewModel.downloadAndInstallApk((updateState as UpdateState.NewUpdateAvailable).downloadUrl)
+                    }) {
+                        Text("立即更新")
+                    }
+                }
+                is UpdateState.DownloadInProgress -> {
+                    Button(enabled = false) {
+                        Text("下载中...")
+                    }
+                }
+                else -> {
+                    Button(onClick = { viewModel.checkForUpdate() }) {
+                        Text("检查更新")
+                    }
+                }
             }
         },
         dismissButton = {
@@ -140,6 +234,8 @@ fun SettingsDialog(
         }
     )
 }
+
+
 
 // ================= 1. 玩家查询页面 =================
 @OptIn(ExperimentalMaterial3Api::class)
@@ -366,5 +462,6 @@ fun PredatorScreen(viewModel: ApexViewModel) {
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
+
 
 
