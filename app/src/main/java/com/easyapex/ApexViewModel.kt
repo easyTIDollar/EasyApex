@@ -3,8 +3,9 @@
 import android.app.DownloadManager
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Environment
-import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.easyapex.ui.theme.AppTheme
@@ -13,8 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import android.content.Intent
-import android.net.Uri
 
 sealed class ApiState<out T> {
     object Idle : ApiState<Nothing>()
@@ -62,16 +61,15 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     val predatorState: StateFlow<ApiState<PredatorResponse>> = _predatorState.asStateFlow()
 
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
-    val versionName: StateFlow<String> = MutableStateFlow(currentVersionName)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
-    private val currentVersionName: String
-        get() = try {
-            getApplication<Application>().packageManager
-                .getPackageInfo(getApplication<Application>().packageName, 0).versionName ?: "unknown"
-        } catch (e: Exception) {
-            "unknown"
+    val versionName: StateFlow<String> = MutableStateFlow(getCurrentVersionName())
+
+    companion object {
+        private fun getCurrentVersionName(): String {
+            return "1.0.5"
         }
+    }
 
     init {
         loadHistory()
@@ -113,13 +111,11 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
 
     fun searchPlayer(searchInput: String) {
         if (searchInput.isBlank()) return
-
         _playerState.value = ApiState.Loading
         viewModelScope.launch {
             try {
                 val isUid = searchInput.all { it.isDigit() }
                 var finalUid = if (isUid) searchInput else ""
-
                 if (!isUid) {
                     try {
                         val uidResponse = RetrofitClient.api.nameToUid(API_KEY, searchInput, "PC")
@@ -128,16 +124,13 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     } catch (e: Exception) {}
                 }
-
                 val response = if (finalUid.isNotEmpty()) {
                     RetrofitClient.api.getPlayerProfileByUid(API_KEY, finalUid, "PC")
                 } else {
                     RetrofitClient.api.getPlayerProfileByName(API_KEY, searchInput, "PC")
                 }
-
                 _playerState.value = ApiState.Success(response)
                 saveToHistory(searchInput)
-
             } catch (e: Exception) {
                 _playerState.value = ApiState.Error(e.localizedMessage ?: "查询失败，请检查 ID 或网络")
             }
@@ -176,13 +169,11 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val latestRelease = GitHubApiClient.api.getLatestRelease()
                 val latestVersion = latestRelease.tag_name.removePrefix("v")
-                val currentVersion = currentVersionName
-
+                val currentVersion = getCurrentVersionName()
                 if (isVersionNewer(latestVersion, currentVersion)) {
                     val apkAsset = latestRelease.assets.find { it.name.endsWith(".apk", ignoreCase = true) }
                     val downloadUrl = apkAsset?.browser_download_url ?: latestRelease.html_url
                     val fileSize = apkAsset?.size?.toLong() ?: 0L
-
                     _updateState.value = UpdateState.NewUpdateAvailable(
                         version = latestVersion,
                         releaseName = latestRelease.name,
@@ -202,7 +193,6 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     private fun isVersionNewer(latest: String, current: String): Boolean {
         val latestParts = latest.split(".").map { it.toIntOrNull() ?: 0 }
         val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
-
         for (i in 0 until maxOf(latestParts.size, currentParts.size)) {
             val l = if (i < latestParts.size) latestParts[i] else 0
             val c = if (i < currentParts.size) currentParts[i] else 0
@@ -216,7 +206,6 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
         _updateState.value = UpdateState.DownloadInProgress(0, 0, 0)
         val context = getApplication<Application>().applicationContext
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-
         val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
             setTitle("EasyApex 更新中")
             setDescription("正在下载新版本...")
@@ -225,29 +214,19 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
             setAllowedOverRoaming(true)
             setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "EasyApex_latest.apk")
         }
-
         val downloadId = downloadManager.enqueue(request)
-
         viewModelScope.launch {
             var lastProgress = -1
             while (true) {
                 val query = DownloadManager.Query().setFilterById(downloadId)
                 val cursor = downloadManager.query(query) ?: break
-
                 if (cursor.moveToFirst()) {
-                    val bytesDownloaded = cursor.getInt(
-                        cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-                    )
-                    val bytesTotal = cursor.getInt(
-                        cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-                    )
+                    val bytesDownloaded = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                    val bytesTotal = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
                     val progress = if (bytesTotal > 0) bytesDownloaded * 100 / bytesTotal else 0
-
                     _updateState.value = UpdateState.DownloadInProgress(progress, bytesDownloaded.toLong(), bytesTotal.toLong())
-
                     val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
                     cursor.close()
-
                     if (status == DownloadManager.STATUS_SUCCESSFUL) {
                         installApk(context, downloadManager, downloadId)
                         break
@@ -255,12 +234,10 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
                         _updateState.value = UpdateState.Error("下载失败，请检查存储空间和网络连接")
                         break
                     }
-
                     if (progress != lastProgress) lastProgress = progress
                 } else {
                     break
                 }
-
                 delay(500)
             }
         }
@@ -271,9 +248,7 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
             val query = DownloadManager.Query().setFilterById(downloadId)
             val cursor = downloadManager.query(query)
             if (cursor != null && cursor.moveToFirst()) {
-                val uriString = cursor.getString(
-                    cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-                )
+                val uriString = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI))
                 cursor.close()
                 val uri = Uri.parse(uriString)
                 val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -284,10 +259,7 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
                 context.startActivity(intent)
             }
         } catch (e: Exception) {
-            _updateState.value = UpdateState.Error("安装失败: ${e.localizedMessage ?: "未知错误"}")
+            _updateState.value = UpdateState.Error("安装失败: ")
         }
     }
 }
-
-
-

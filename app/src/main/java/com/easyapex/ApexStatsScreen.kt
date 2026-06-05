@@ -67,14 +67,23 @@ fun ApexMainScreen(viewModel: ApexViewModel) {
             when (selectedTab) {
                 0 -> PlayerSearchScreen(viewModel)
                 1 -> MapRotationScreen(viewModel)
-                2 -> PredatorScreen(viewModel)            }
+                2 -> PredatorScreen(viewModel)
+            }
         }
 
         if (showSettingsDialog) {
-                    SettingsDialog(currentTheme = currentTheme, onThemeChange = { newTheme -> viewModel.setTheme(newTheme) }, onDismiss = { showSettingsDialog = false }, viewModel = viewModel)
+            SettingsDialog(
+                currentTheme = currentTheme,
+                onThemeChange = { newTheme -> viewModel.setTheme(newTheme) },
+                onDismiss = { showSettingsDialog = false },
+                viewModel = viewModel
+            )
+        }
+    }
 
-
+}
 @Composable
+
 fun SettingsDialog(
     currentTheme: AppTheme,
     onThemeChange: (AppTheme) -> Unit,
@@ -115,7 +124,7 @@ fun SettingsDialog(
                 Text("关于 EasyApex", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "一款轻量、便捷的《Apex 英雄》非官方数据查询工具。支持 Origin ID 及底层 UID 智能查询，提供最新地图轮换与猎杀者门槛数据。\n\n数据来源: apexlegendsstatus.com",
+                    text = "   Apex非官方数据查询工具。支持 Origin ID 及 UID 查询，提供最新地图轮换与猎杀者门槛数据。\n数据来源: apexlegendsstatus.com",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -141,7 +150,7 @@ fun SettingsDialog(
                     is UpdateState.NewUpdateAvailable -> {
                         Column {
                             Text(
-                                text = "发现新版本: v${state.version}",
+                                text = "发现新版本:",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -170,7 +179,7 @@ fun SettingsDialog(
                     is UpdateState.DownloadInProgress -> {
                         Column {
                             Text(
-                                text = "下载中: ${state.progress}%",
+                                text = "下载中: %",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -198,7 +207,7 @@ fun SettingsDialog(
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("您已是最新版本 v${viewModel.versionName.value}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                            Text("您已是最新版本", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                     is UpdateState.Error -> {
@@ -218,7 +227,7 @@ fun SettingsDialog(
                     }
                 }
                 is UpdateState.DownloadInProgress -> {
-                    Button(enabled = false) {
+                    Button(enabled = false, onClick = { }) {
                         Text("下载中...")
                     }
                 }
@@ -234,8 +243,6 @@ fun SettingsDialog(
         }
     )
 }
-
-
 
 // ================= 1. 玩家查询页面 =================
 @OptIn(ExperimentalMaterial3Api::class)
@@ -462,6 +469,7 @@ fun PredatorScreen(viewModel: ApexViewModel) {
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
+
 
 
 
