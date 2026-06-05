@@ -1,14 +1,14 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
 }
 
 android {
-    namespace = "com.jussicodes.easyapex"
+    namespace = "com.easyapex"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.jussicodes.easyapex"
+        applicationId = "com.easyapex"
         minSdk = 26
         targetSdk = 34
         versionCode = 2
