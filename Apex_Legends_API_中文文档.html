@@ -1,0 +1,451 @@
+﻿<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Apex Legends API 中文文档</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#050810;--bg2:#0a0f1a;--bg3:#101624;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);--accent:#00d4aa;--accent2:#7c3aed;--accent-dim:rgba(0,212,170,0.08);--accent-dim2:rgba(0,212,170,0.15);--text:#e2e8f0;--text2:#8b95a8;--text3:#4a5568;--red:#ff6b6b;--yellow:#ffd93d;--blue:#6ec6ff}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent}
+body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;-webkit-font-smoothing:antialiased}
+.grid-bg{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 50% at 50% 20%,black 30%,transparent 100%)}
+.glow{position:fixed;top:-30%;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(0,212,170,0.05) 0%,transparent 70%);pointer-events:none;z-index:0}
+header{position:relative;z-index:1;padding:5rem 2rem 4rem;text-align:center;overflow:hidden}
+header::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:300px;background:linear-gradient(180deg,rgba(0,212,170,0.07) 0%,transparent 100%);filter:blur(60px);pointer-events:none}
+.logo{width:72px;height:72px;margin:0 auto 2rem;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 0 60px rgba(0,212,170,0.15)}
+.logo::after{content:'';position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(135deg,var(--accent),var(--accent2));z-index:-1;filter:blur(16px);opacity:0.4}
+h1.title{font-size:3rem;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,#f0f4f8,#a0aec0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.8rem}
+.subtitle{color:var(--text2);font-size:1.05rem;font-weight:400;max-width:500px;margin:0 auto 1.6rem}
+.badges{display:flex;justify-content:center;gap:0.6rem;flex-wrap:wrap}
+.b{display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 1rem;border-radius:100px;font-size:0.78rem;font-weight:500;text-decoration:none;transition:all 0.2s}
+.bl{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,212,170,0.2)}
+.bl:hover{background:rgba(0,212,170,0.18);box-shadow:0 0 20px rgba(0,212,170,0.1)}
+.bt{background:rgba(124,58,237,0.1);color:var(--accent2);border:1px solid rgba(123,97,255,0.2)}
+.bu{background:rgba(255,107,107,0.08);color:var(--red);border:1px solid rgba(255,107,107,0.15)}
+.layout{position:relative;z-index:1;display:flex;max-width:1400px;margin:0 auto}
+nav{position:fixed;top:0;left:0;width:220px;height:100vh;padding:5rem 1rem 2rem 1.8rem;overflow-y:auto;border-right:1px solid var(--border);background:rgba(5,8,16,0.85);backdrop-filter:blur(20px);z-index:100}
+nav::-webkit-scrollbar{display:none}
+.nt{font-size:0.65rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--text3);margin-bottom:1rem;padding-left:0.8rem;font-weight:600}
+nav a{display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.8rem;color:var(--text2);text-decoration:none;font-size:0.82rem;font-weight:400;border-radius:8px;transition:all 0.15s;border-left:2px solid transparent;margin-bottom:1px}
+nav a:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+nav a.act{color:var(--accent);background:var(--accent-dim);border-left-color:var(--accent);font-weight:500}
+nav .ni{font-size:0.9rem;width:20px;text-align:center}
+.ndiv{height:1px;background:var(--border);margin:1rem 0.8rem}
+nav.sub a{padding-left:2.2rem;font-size:0.78rem}
+main{flex:1;max-width:820px;padding:4rem 0 6rem;margin-left:220px}
+.sec{margin-bottom:4.5rem;scroll-margin-top:2rem}
+.shdr{display:flex;align-items:center;gap:0.7rem;margin-bottom:1.4rem;padding-bottom:0.8rem;border-bottom:1px solid var(--border)}
+.sic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;background:var(--accent-dim);border:1px solid rgba(0,212,170,0.15)}
+.shdr h2{font-size:1.55rem;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+.sd{color:var(--text2);font-size:0.95rem;margin-bottom:1.8rem;line-height:1.8}
+.sub{margin-bottom:2.5rem;padding:1.8rem;background:rgba(255,255,255,0.01);border:1px solid var(--border);border-radius:14px;transition:border-color 0.2s}
+.sub:hover{border-color:var(--border2)}
+.sub h3{font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:0.6rem}
+.sub h4{font-size:0.9rem;font-weight:600;color:var(--accent);margin:1.5rem 0 0.8rem;text-transform:uppercase;letter-spacing:0.5px}
+.cblk{position:relative;margin:1.2rem 0;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--bg2)}
+.chdr{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1rem;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border)}
+.cl{font-size:0.7rem;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.cb{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text2);padding:0.2rem 0.7rem;border-radius:6px;font-size:0.7rem;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.cb:hover{background:rgba(255,255,255,0.08);color:var(--text)}
+.cbdy{padding:1rem 1.2rem;overflow-x:auto;font-family:'JetBrains Mono','Cascadia Code',monospace;font-size:0.82rem;line-height:1.8;color:#c9d1d9;white-space:pre;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent}
+.cbdy .url{color:var(--accent)}
+.cbdy .pm{color:#79c0ff}
+.cbdy .cm{color:var(--text3);font-style:italic}
+code{background:var(--accent-dim);color:var(--accent);padding:0.15rem 0.5rem;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:0.84em;border:1px solid rgba(0,212,170,0.1)}
+.tw{margin:1.2rem 0;border-radius:12px;border:1px solid var(--border);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:0.88rem}
+thead{background:rgba(0,212,170,0.04)}
+th{padding:0.8rem 1rem;text-align:left;font-weight:600;color:var(--accent);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:0.75rem 1rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.01)}
+.tg{display:inline-block;padding:0.15rem 0.55rem;border-radius:4px;font-size:0.72rem;font-weight:600;letter-spacing:0.3px}
+.ty{background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.2)}
+.tn{background:rgba(59,130,246,0.1);color:#93c5fd;border:1px solid rgba(59,130,246,0.15)}
+.alert{display:flex;gap:0.8rem;padding:1rem 1.2rem;border-radius:12px;margin:1.2rem 0;font-size:0.9rem;line-height:1.7}
+.ai2{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.al-i{background:rgba(110,198,255,0.04);border:1px solid rgba(110,198,255,0.12);color:#a8d4ff}
+.al-w{background:rgba(255,217,61,0.04);border:1px solid rgba(255,217,61,0.12);color:#ffe08a}
+.al-w strong,.al-i strong{color:var(--text)}
+p,ul{color:var(--text2);margin-bottom:0.8rem;font-size:0.93rem}
+li{margin-bottom:0.4rem;line-height:1.7}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(0,212,170,0.2);transition:border-color 0.15s}
+a:hover{border-bottom-color:var(--accent)}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:2.5rem 2rem;text-align:center;color:var(--text3);font-size:0.8rem}
+.fl{display:flex;justify-content:center;gap:1.2rem;margin-bottom:0.8rem;flex-wrap:wrap}
+footer a{color:var(--accent);border-bottom:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.sec{animation:fadeUp 0.5s ease both}
+@media(max-width:960px){nav{display:none}main{margin-left:0;padding:2rem 1.5rem 4rem}h1.title{font-size:2rem}.layout{padding:0 1rem}.sub{padding:1.2rem}}
+@media(max-width:768px){header{padding:3rem 1.5rem 2.5rem}h1.title{font-size:1.6rem}.logo{width:56px;height:56px;font-size:1.6rem;border-radius:16px}}
+</style>
+</head>
+<body>
+<div class='grid-bg'></div>
+<div class='glow'></div>
+<header>
+<div class='logo'>🏆</div>
+<h1 class='title'>Apex Legends API</h1>
+<p class='subtitle'>非官方 Apex Legends 数据接口完整中文参考文档</p>
+<div class='badges'>
+<a class='bl' href='https://apexlegendsapi.com' target='_blank'>🔗 apexlegendsapi.com</a>
+<span class='bt'>📝 中文翻译版</span>
+<span class='bu'>⚠ 非官方</span>
+</div>
+</header>
+<div class='layout'>
+<nav id='nav'>
+<div class='nt'>API 参考</div>
+<a href='#s-intro' class='act'><span class='ni'>📔</span>简介</a>
+<a href='#s-auth'><span class='ni'>🔑</span>身份认证</a>
+<a href='#s-rate'><span class='ni'>⏱</span>速率限制</a>
+<a href='#s-webhook'><span class='ni'>🔨</span>Webhook</a>
+<div class='ndiv'></div>
+<a href='#s-player'><span class='ni'>👤</span>玩家数据</a>
+<div class='sub'>
+<a href='#s-qname'><span class='ni'>→</span>按名称查询</a>
+<a href='#s-quid'><span class='ni'>→</span>按 UID 查询</a>
+</div>
+<a href='#s-match'><span class='ni'>🎮</span>比赛历史</a>
+<div class='sub'>
+<a href='#s-mnew'><span class='ni'>→</span>新版 API</a>
+<a href='#s-mleg'><span class='ni'>→</span>旧版 API</a>
+</div>
+<a href='#s-lb'><span class='ni'>🏅</span>排行榜</a>
+<a href='#s-map'><span class='ni'>🗺</span>地图轮换</a>
+<a href='#s-pred'><span class='ni'>👑</span>猎杀者</a>
+<a href='#s-srv'><span class='ni'>⚙</span>服务器状态</a>
+<a href='#s-origin'><span class='ni'>💻</span>Origin 查询</a>
+<a href='#s-nuid'><span class='ni'>🔀</span>名称转 UID</a>
+<div class='ndiv'></div>
+<a href='#s-err'><span class='ni' style='color:var(--red)'>⚠</span>错误码</a>
+</nav>
+<main>
+<div class='sec' id='s-intro'>
+<div class='shdr'><div class='sic'>📔</div><h2>简介</h2></div>
+<p class='sd'>欢迎使用非官方 Apex Legends API，为您提供便捷的玩家数据与游戏数据接口服务。</p>
+<ul>
+<li>本 API 为<strong>非官方</strong>产品，不提供任何担保，不保证正常运行时间</li>
+<li>使用前必须在 <a href='https://apexlegendsapi.com/auth' target='_blank'>开发者门户</a> 注册 API Key</li>
+<li>每人/每项目仅限一个 API Key，违规可能导致 Key 被删除</li>
+<li>适用公平使用原则，请勿进行对 API 有害的操作</li>
+<li>如有疑问，可在 Discord 上私信 <code>hugo#0069</code></li>
+</ul>
+</div>
+<div class='sec' id='s-auth'>
+<div class='shdr'><div class='sic'>🔑</div><h2>身份认证</h2></div>
+<p class='sd'>所有 API 请求均需提供有效的 API Key，支持两种方式传递。</p>
+<div class='sub'>
+<h3>方式一：Authorization 请求头</h3>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>bash</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='cm'># 使用 shell 时在请求头中携带 API Key</span>
+curl "https://api.apexlegendsstatus.com/" -H "Authorization: <span class='pm'>YOUR_API_KEY</span>"
+
+<span class='cm'># 或者在 GET 参数中传递</span>
+curl "https://api.apexlegendsstatus.com/?auth=<span class='pm'>YOUR_API_KEY</span>"</div>
+</div>
+</div>
+<div class='sub'>
+<h3>方式二：Query Parameter</h3>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>url</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/bridge?auth=<span class='pm'>YOUR_API_KEY</span>&player=PlayerName&platform=PC</span></div>
+</div>
+<div class='alert al-w'>
+<span class='ai2'>⚠</span>
+<div><strong>重要：</strong>请将 <code>YOUR_API_KEY</code> 替换为您的真实 API Key。</div>
+</div>
+</div>
+</div>
+<div class='sec' id='s-rate'>
+<div class='shdr'><div class='sic'>⏱</div><h2>速率限制</h2></div>
+<div class='sub'>
+<ul>
+<li>首次创建 API Key 时，限制为 <strong>5 次请求/秒</strong></li>
+<li>可通过绑定 Discord 账号或在 Discord 开票据申请提高限制</li>
+<li>所有 API 共享此速率限制</li>
+<li>响应头 <code>X-Current-Rate</code> 可查看当前速率</li>
+</ul>
+</div>
+</div>
+<div class='sec' id='s-webhook'>
+<div class='shdr'><div class='sic'>🔨</div><h2>Webhook</h2></div>
+<div class='sub'>
+<ul>
+<li>目前仅 <strong>比赛历史 API</strong> 支持 Webhook</li>
+<li>必须在开发者门户配置 Webhook URL</li>
+<li>Webhook 使用的 User-Agent 固定为 <code>ApexAPI Webhook/0.1</code></li>
+<li>服务器必须在收到 POST 后 <strong>3 秒内</strong> 完成处理，否则丢弃</li>
+</ul>
+</div>
+</div>
+<div class='sec' id='s-player'>
+<div class='shdr'><div class='sic'>👤</div><h2>玩家统计数据</h2></div>
+<p class='sd'>通过玩家名称或 UID 获取详细的 Apex Legends 游戏统计数据。</p>
+<div class='sub' id='s-qname'>
+<h3>按名称查询</h3>
+<p>通过玩家名称和平台获取玩家统计数据。PC 玩家需使用 Origin 账号名称。</p>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/bridge?auth=<span class='pm'>YOUR_API_KEY</span>&player=<span class='pm'>PLAYER_NAME</span>&platform=<span class='pm'>PLATFORM</span></span></div>
+</div>
+<h4>查询参数</h4>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>player</code></td><td><span class='tg ty'>是</span></td><td>玩家用户名</td></tr>
+<tr><td><code>platform</code></td><td><span class='tg ty'>是</span></td><td><code>PC</code>（Origin/Steam）、<code>PS4</code>（PS4/5）、<code>X1</code>（Xbox）</td></tr>
+<tr><td><code>version</code></td><td><span class='tg tn'>否</span></td><td>API 版本（1、2、4 或 5），默认 5，其他版本已不再活跃支持</td></tr>
+<tr><td><code>enableClubsBeta</code></td><td><span class='tg tn'>否</span></td><td><code>true</code>/<code>false</code>。获取玩家公会数据（测试中）</td></tr>
+<tr><td><code>skipRank</code></td><td><span class='tg tn'>否</span></td><td>任意值。不返回排位统计数据</td></tr>
+<tr><td><code>merge</code></td><td><span class='tg tn'>否</span></td><td>任意值。合并相同类型的追踪器数据</td></tr>
+<tr><td><code>removeMerged</code></td><td><span class='tg tn'>否</span></td><td>任意值。移除已被合并的追踪器</td></tr>
+</tbody></table>
+</div>
+</div>
+<div class='sub' id='s-quid'>
+<h3>按 UID 查询</h3>
+<p>通过玩家 UID 和平台获取玩家统计数据。</p>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/bridge?auth=<span class='pm'>YOUR_API_KEY</span>&uid=<span class='pm'>PLAYER_UID</span>&platform=<span class='pm'>PLATFORM</span></span></div>
+</div>
+<h4>查询参数</h4>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>uid</code></td><td><span class='tg ty'>是</span></td><td>玩家 UID</td></tr>
+<tr><td><code>platform</code></td><td><span class='tg ty'>是</span></td><td><code>PC</code>、<code>PS4</code>、<code>X1</code>、<code>SWITCH</code></td></tr>
+<tr><td><code>version</code></td><td><span class='tg tn'>否</span></td><td>API 版本（1、2、4 或 5），默认 5</td></tr>
+<tr><td><code>enableClubsBeta</code></td><td><span class='tg tn'>否</span></td><td>获取公会数据（测试中）</td></tr>
+<tr><td><code>skipRank</code></td><td><span class='tg tn'>否</span></td><td>不返回排位数据</td></tr>
+<tr><td><code>merge</code></td><td><span class='tg tn'>否</span></td><td>合并追踪器数据</td></tr>
+<tr><td><code>removeMerged</code></td><td><span class='tg tn'>否</span></td><td>移除已被合并的追踪器</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+<div class='sec' id='s-match'>
+<div class='shdr'><div class='sic'>🎮</div><h2>比赛历史</h2></div>
+<div class='sub' id='s-mnew'>
+<h3>新版比赛历史 API</h3>
+<p>获取指定玩家的比赛历史，返回最近 20 场比赛数据。</p>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/games?auth=<span class='pm'>YOUR_API_KEY</span>&uid=<span class='pm'>PLAYER_UID</span></span></div>
+</div>
+<h4>查询参数</h4>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>uid</code></td><td><span class='tg ty'>是</span></td><td>玩家 UID</td></tr>
+<tr><td><code>mode</code></td><td><span class='tg tn'>否</span></td><td><code>BATTLE_ROYALE</code>、<code>ARENAS</code>、<code>UNKNOWN</code></td></tr>
+<tr><td><code>start</code></td><td><span class='tg tn'>否</span></td><td>开始 epoch 时间戳（整数）</td></tr>
+<tr><td><code>end</code></td><td><span class='tg tn'>否</span></td><td>结束 epoch 时间戳（整数）</td></tr>
+<tr><td><code>limit</code></td><td><span class='tg tn'>否</span></td><td>最多返回场次数（整数）</td></tr>
+</tbody></table>
+</div>
+<h4>返回字段</h4>
+<div class='tw'>
+<table><thead><tr><th>字段</th><th>类型</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>string</td><td>比赛唯一 ID</td></tr>
+<tr><td><code>platform</code></td><td>string</td><td>平台</td></tr>
+<tr><td><code>match_length</code></td><td>int</td><td>比赛持续时间（秒）</td></tr>
+<tr><td><code>start</code>/<code>end</code></td><td>int</td><td>开始/结束 epoch 时间戳</td></tr>
+<tr><td><code>map</code></td><td>string</td><td>地图名称</td></tr>
+<tr><td><code>mode</code></td><td>string</td><td>游戏模式</td></tr>
+<tr><td><code>season</code></td><td>int</td><td>赛季编号</td></tr>
+<tr><td><code>match_type</code></td><td>string</td><td>比赛类型（PUB/RANKED/PUB_PRACTICE）</td></tr>
+<tr><td><code>ranked</code></td><td>boolean</td><td>是否排位赛</td></tr>
+<tr><td><code>is_duo</code>/<code>is_solo</code>/<code>is_trio</code></td><td>boolean</td><td>双排/单排/三排</td></tr>
+<tr><td><code>players</code></td><td>array</td><td>玩家数组</td></tr>
+</tbody></table>
+</div>
+<h4>players 数组字段</h4>
+<div class='tw'>
+<table><thead><tr><th>字段</th><th>类型</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>uid</code></td><td>string</td><td>玩家 UID</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>玩家名称</td></tr>
+<tr><td><code>rank</code></td><td>string</td><td>段位</td></tr>
+<tr><td><code>kills</code>/<code>assists</code></td><td>int</td><td>击杀/助攻</td></tr>
+<tr><td><code>damage</code></td><td>int</td><td>造成伤害</td></tr>
+<tr><td><code>team_position</code></td><td>int</td><td>队伍排名（1-12）</td></tr>
+<tr><td><code>legend</code></td><td>string</td><td>传奇角色</td></tr>
+<tr><td><code>level</code></td><td>int</td><td>传奇等级</td></tr>
+<tr><td><code>rank_score</code></td><td>int</td><td>排位分数</td></tr>
+<tr><td><code>team_placement</code></td><td>int</td><td>队伍最终排名</td></tr>
+<tr><td><code>team_damage</code></td><td>int</td><td>队伍总伤害</td></tr>
+<tr><td><code>club_tag</code></td><td>string</td><td>公会标签</td></tr>
+</tbody></table>
+</div>
+<div class='alert al-i'>
+<span class='ai2'>📡</span>
+<div><strong>白标要求：</strong>白标用户需在页面添加指向 <a href='https://apexlegendsstatus.com' target='_blank'>apexlegendsstatus.com</a> 的链接，文案为 <em>"Data provided by Apex Legends Status"</em>。</div>
+</div>
+</div>
+<div class='sub' id='s-mleg'>
+<h3>旧版比赛历史 API</h3>
+<p>旧版端点，同时支持查询比赛历史和追踪玩家列表管理。</p>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/bridge?auth=<span class='pm'>YOUR_API_KEY</span>&uid=<span class='pm'>PLAYER_UID</span>&platform=<span class='pm'>PLATFORM</span>&history=1&action=<span class='pm'>ACTION</span></span></div>
+</div>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>uid</code></td><td><span class='tg ty'>是</span></td><td>玩家 UID</td></tr>
+<tr><td><code>platform</code></td><td><span class='tg ty'>是</span></td><td><code>PC</code>、<code>PS4</code>、<code>X1</code>、<code>SWITCH</code></td></tr>
+<tr><td><code>history</code></td><td><span class='tg ty'>是</span></td><td>比赛历史模式，值必须为 <code>1</code></td></tr>
+<tr><td><code>action</code></td><td><span class='tg ty'>是</span></td><td><code>info</code>、<code>get</code>、<code>delete</code>、<code>add</code></td></tr>
+</tbody></table>
+</div>
+<div class='alert al-w'>
+<span class='ai2'>⚠</span>
+<div><strong>注意：</strong>此 API 已不再活跃维护，推荐使用 <a href='#s-mnew'>新版比赛历史 API</a>。</div>
+</div>
+</div>
+</div>
+<div class='sec' id='s-lb'>
+<div class='shdr'><div class='sic'>🏅</div><h2>排行榜</h2></div>
+<p class='sd'>获取各传奇的排行榜数据，最多返回前 500 名玩家。</p>
+<div class='sub'>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/leaderboard?auth=<span class='pm'>YOUR_API_KEY</span>&legend=<span class='pm'>LEGEND</span>&key=<span class='pm'>KEY</span>&platform=<span class='pm'>PLATFORM</span></span></div>
+</div>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>platform</code></td><td><span class='tg ty'>是</span></td><td><code>PC</code>、<code>X1</code>、<code>PS4</code>、<code>SWITCH</code>、<code>ANY</code></td></tr>
+<tr><td><code>legend</code></td><td><span class='tg ty'>是</span></td><td>传奇名称（首字母大写），<code>Global</code> 获取全局数据</td></tr>
+<tr><td><code>key</code></td><td><span class='tg tn'>否</span></td><td>追踪器键名。不传返回所有可用键名列表</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+<div class='sec' id='s-map'>
+<div class='shdr'><div class='sic'>🗺</div><h2>地图轮换</h2></div>
+<p class='sd'>返回当前和即将到来的 Battle Royale 及 Arenas 模式下的轮换地图。</p>
+<div class='sub'>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/maprotation?auth=<span class='pm'>YOUR_API_KEY</span></span></div>
+</div>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>version</code></td><td><span class='tg tn'>否</span></td><td><code>1</code> 仅 Battle Royale 匹配地图；<code>2</code> 所有模式</td></tr>
+</tbody></table>
+</div>
+<div class='alert al-i'>
+<span class='ai2'>💡</span>
+<div>不传 version 或传 <code>1</code> 仅返回 Battle Royale 地图；传 <code>2</code> 可获取包含 Arenas 的完整数据。</div>
+</div>
+</div>
+</div>
+<div class='sec' id='s-pred'>
+<div class='shdr'><div class='sic'>👑</div><h2>猎杀者（Predator）</h2></div>
+<p class='sd'>返回各平台达到猎杀者段位所需的 RP/AP 及大师玩家数量。</p>
+<div class='sub'>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/predator?auth=<span class='pm'>YOUR_API_KEY</span></span></div>
+</div>
+<div class='tw'>
+<table><thead><tr><th>字段</th><th>类型</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>platform</code></td><td>string</td><td>平台（PC、PS4、X1、SWITCH）</td></tr>
+<tr><td><code>rank_score</code></td><td>int</td><td>猎杀者所需排名分数（RP）</td></tr>
+<tr><td><code>arena_score</code></td><td>int</td><td>猎杀者所需竞技场分数（AP）</td></tr>
+<tr><td><code>masters_count</code></td><td>int</td><td>大师段位玩家数量</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+<div class='sec' id='s-srv'>
+<div class='shdr'><div class='sic'>⚙</div><h2>服务器状态</h2></div>
+<p class='sd'>显示各区域服务器状态，与 <a href='https://apexlegendsstatus.com' target='_blank'>apexlegendsstatus.com</a> 一致。</p>
+<div class='sub'>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/servers?auth=<span class='pm'>YOUR_API_KEY</span></span></div>
+</div>
+<div class='alert al-i'>
+<span class='ai2'>📡</span>
+<div><strong>白标要求：</strong>需包含指向 <a href='https://apexlegendsstatus.com' target='_blank'>apexlegendsstatus.com</a> 的链接或注明 "Data from apexlegendsstatus.com"。</div>
+</div>
+</div>
+</div>
+<div class='sec' id='s-origin'>
+<div class='shdr'><div class='sic'>💻</div><h2>Origin 用户名查询</h2></div>
+<p class='sd'>仅获取玩家的 Origin UID，不返回统计数据。</p>
+<div class='sub'>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/origin?auth=<span class='pm'>YOUR_API_KEY</span>&player=<span class='pm'>PLAYER_NAME</span></span></div>
+</div>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>player</code></td><td><span class='tg ty'>是</span></td><td>玩家名称</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+<div class='sec' id='s-nuid'>
+<div class='shdr'><div class='sic'>🔀</div><h2>名称转 UID</h2></div>
+<p class='sd'>根据玩家名称返回 UID，支持 PS、Xbox 和 Origin。</p>
+<div class='sub'>
+<div class='cblk'>
+<div class='chdr'><span class='cl'>GET</span><button class='cb' onclick='copyCode(this)'>复制</button></div>
+<div class='cbdy'><span class='url'>https://api.apexlegendsstatus.com/nametouid?auth=<span class='pm'>YOUR_API_KEY</span>&player=<span class='pm'>PLAYER_NAME</span>&platform=<span class='pm'>PLATFORM</span></span></div>
+</div>
+<div class='tw'>
+<table><thead><tr><th>参数</th><th>必填</th><th>描述</th></tr></thead>
+<tbody>
+<tr><td><code>player</code></td><td><span class='tg ty'>是</span></td><td>玩家名称</td></tr>
+<tr><td><code>platform</code></td><td><span class='tg ty'>是</span></td><td><code>PS4</code>、<code>X1</code>、<code>PC</code></td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+<div class='sec' id='s-err'>
+<div class='shdr'><div class='sic' style='background:rgba(255,107,107,0.1);border-color:rgba(255,107,107,0.15)'>⚠</div><h2>错误码</h2></div>
+<div class='sub'>
+<div class='tw'>
+<table><thead><tr><th>错误码</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td><code>400</code></td><td>请几分钟后重试</td></tr>
+<tr><td><code>403</code></td><td>未授权 / API Key 未知</td></tr>
+<tr><td><code>404</code></td><td>未找到该玩家</td></tr>
+<tr><td><code>405</code></td><td>外部 API 错误</td></tr>
+<tr><td><code>410</code></td><td>提供的平台未知</td></tr>
+<tr><td><code>429</code></td><td>已达到速率限制</td></tr>
+<tr><td><code>500</code></td><td>内部服务器错误</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+</main>
+</div>
+<footer>
+<div class='fl'>
+<a href='https://apexlegendsapi.com' target='_blank'>apexlegendsapi.com</a>
+<a href='https://apexlegendsapi.com/auth' target='_blank'>API Key 注册</a>
+<a href='https://apexlegendsapi.com/usage-rules' target='_blank'>使用规范</a>
+<a href='https://discord.gg/qd9cZQm' target='_blank'>Discord 支持</a>
+</div>
+<p>自动翻译版 · 原文请参考 apexlegendsapi.com · 2026-06-05</p>
+</footer>
+<script>
+function copyCode(b){var p=b.closest('.cblk').querySelector('.cbdy');var t=p.innerText;navigator.clipboard.writeText(t).then(function(){b.textContent='已复制 ✓';setTimeout(function(){b.textContent='复制'},1500)})}
+var secs=document.querySelectorAll('.sec[id]');var links=document.querySelectorAll('nav a[href^=\"#\"]');
+window.addEventListener('scroll',function(){var c='';secs.forEach(function(s){if(window.scrollY>=s.offsetTop-200)c=s.getAttribute('id')});links.forEach(function(a){a.classList.toggle('act',a.getAttribute('href')==='#'+c)})});
+</script>
+</body>
+</html>
