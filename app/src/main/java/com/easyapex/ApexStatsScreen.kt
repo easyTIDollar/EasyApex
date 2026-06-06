@@ -179,7 +179,7 @@ fun SettingsDialog(
                     is UpdateState.DownloadInProgress -> {
                         Column {
                             Text(
-                                text = "下载中: %",
+                                text = "下载中: ${state.progress}%",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -469,6 +469,7 @@ fun PredatorScreen(viewModel: ApexViewModel) {
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
+
 
 
 
