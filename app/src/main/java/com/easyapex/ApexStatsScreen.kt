@@ -3,18 +3,64 @@
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,7 +69,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.easyapex.ui.theme.AppTheme // 🌟 导入你的主题
+import com.easyapex.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +77,6 @@ fun ApexMainScreen(viewModel: ApexViewModel) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("玩家", "地图", "猎杀")
     val icons = listOf(Icons.Default.Person, Icons.Default.Place, Icons.Default.Star)
-
     var showSettingsDialog by remember { mutableStateOf(false) }
     val currentTheme by viewModel.currentTheme.collectAsState()
 
@@ -74,16 +119,15 @@ fun ApexMainScreen(viewModel: ApexViewModel) {
         if (showSettingsDialog) {
             SettingsDialog(
                 currentTheme = currentTheme,
-                onThemeChange = { newTheme -> viewModel.setTheme(newTheme) },
+                onThemeChange = { viewModel.setTheme(it) },
                 onDismiss = { showSettingsDialog = false },
                 viewModel = viewModel
             )
         }
     }
-
 }
-@Composable
 
+@Composable
 fun SettingsDialog(
     currentTheme: AppTheme,
     onThemeChange: (AppTheme) -> Unit,
@@ -92,6 +136,7 @@ fun SettingsDialog(
 ) {
     val context = LocalContext.current
     val updateState by viewModel.updateState.collectAsState()
+    val versionInfo by viewModel.versionInfo.collectAsState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -135,6 +180,24 @@ fun SettingsDialog(
 
                 Text("版本更新", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "当前版本：v${versionInfo.currentVersion}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "最新版本：${versionInfo.latestVersion?.let { "v$it" } ?: "暂未获取"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = versionInfo.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 when (val state = updateState) {
                     is UpdateState.Idle -> {
@@ -156,11 +219,7 @@ fun SettingsDialog(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = state.releaseName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Text(text = state.releaseName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = state.releaseNotes,
@@ -172,7 +231,9 @@ fun SettingsDialog(
                             val sizeStr = if (state.fileSize > 0) {
                                 val mb = state.fileSize / (1024.0 * 1024.0)
                                 String.format("大小: %.1f MB", mb)
-                            } else "未知大小"
+                            } else {
+                                "未知大小"
+                            }
                             Text(text = sizeStr, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                         }
                     }
@@ -184,15 +245,23 @@ fun SettingsDialog(
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            LinearProgressIndicator(
-                                progress = state.progress / 100f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            if (state.totalBytes > 0) {
+                                LinearProgressIndicator(
+                                    progress = state.progress / 100f,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else {
+                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
                             val downloadedMB = state.downloadedBytes / (1024.0 * 1024.0)
                             val totalMB = if (state.totalBytes > 0) state.totalBytes / (1024.0 * 1024.0) else 0.0
                             Text(
-                                text = String.format("%.1f MB / %.1f MB", downloadedMB, totalMB),
+                                text = if (state.totalBytes > 0) {
+                                    String.format("%.1f MB / %.1f MB", downloadedMB, totalMB)
+                                } else {
+                                    String.format("已下载 %.1f MB", downloadedMB)
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline
                             )
@@ -200,12 +269,7 @@ fun SettingsDialog(
                     }
                     is UpdateState.UpToDate -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("您已是最新版本", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                         }
@@ -213,7 +277,6 @@ fun SettingsDialog(
                     is UpdateState.Error -> {
                         Text(state.message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
                     }
-                    else -> {}
                 }
             }
         },
@@ -244,19 +307,21 @@ fun SettingsDialog(
     )
 }
 
-// ================= 1. 玩家查询页面 =================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerSearchScreen(viewModel: ApexViewModel) {
     var playerName by remember { mutableStateOf("") }
     val uiState by viewModel.playerState.collectAsState()
     val searchHistory by viewModel.searchHistory.collectAsState()
+    val pinnedPlayers by viewModel.pinnedPlayers.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         OutlinedTextField(
-            value = playerName, onValueChange = { playerName = it },
+            value = playerName,
+            onValueChange = { playerName = it },
             label = { Text("输入 EA 名字 或 UID") },
-            modifier = Modifier.fillMaxWidth(), singleLine = true
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { viewModel.searchPlayer(playerName) }, modifier = Modifier.fillMaxWidth()) {
@@ -283,33 +348,87 @@ fun PlayerSearchScreen(viewModel: ApexViewModel) {
             }
         }
 
+        if (pinnedPlayers.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                Text("已置顶玩家", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(pinnedPlayers) { pinnedName ->
+                    InputChip(
+                        selected = true,
+                        onClick = { playerName = pinnedName; viewModel.searchPlayer(pinnedName) },
+                        label = { Text(pinnedName) },
+                        leadingIcon = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        trailingIcon = {
+                            Icon(Icons.Default.Close, contentDescription = "取消置顶", modifier = Modifier.size(16.dp).clickable { viewModel.removePinnedPlayer(pinnedName) })
+                        }
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         when (val state = uiState) {
             is ApiState.Idle -> Text("支持 Origin ID 或 底层数字 UID 查询", color = MaterialTheme.colorScheme.outline)
             is ApiState.Loading -> CircularProgressIndicator()
             is ApiState.Error -> Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
-            is ApiState.Success -> PlayerResultCard(state.data)
+            is ApiState.Success -> PlayerResultCard(
+                playerData = state.data,
+                isPinned = state.data.global?.name in pinnedPlayers,
+                onTogglePinned = { state.data.global?.name?.let(viewModel::togglePinnedPlayer) }
+            )
         }
     }
 }
 
 @Composable
-fun PlayerResultCard(playerData: PlayerResponse) {
+fun PlayerResultCard(
+    playerData: PlayerResponse,
+    isPinned: Boolean,
+    onTogglePinned: () -> Unit
+) {
     val global = playerData.global
     val realtime = playerData.realtime
     val legends = playerData.legends
 
-    if (global == null) { Text("未获取到玩家详细数据"); return }
+    if (global == null) {
+        Text("未获取到玩家详细数据")
+        return
+    }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.elevatedCardElevation(6.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(text = global.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = global.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FilterChip(
+                        selected = isPinned,
+                        onClick = onTogglePinned,
+                        label = { Text(if (isPinned) "已置顶" else "置顶") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
                 if (realtime != null) {
                     val isOnline = realtime.isOnline == 1
-                    val statusText = if (isOnline) { if (realtime.isInGame == 1) "游戏中" else "大厅发呆" } else "离线"
-                    AssistChip(onClick = { }, label = { Text(statusText) }, colors = AssistChipDefaults.assistChipColors(labelColor = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline))
+                    val statusText = if (isOnline) {
+                        if (realtime.isInGame == 1) "游戏中" else "大厅发呆"
+                    } else {
+                        "离线"
+                    }
+                    AssistChip(
+                        onClick = { },
+                        label = { Text(statusText) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            labelColor = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        )
+                    )
                 }
             }
 
@@ -328,9 +447,19 @@ fun PlayerResultCard(playerData: PlayerResponse) {
                 }
                 if (global.rank != null) {
                     Column(horizontalAlignment = Alignment.End) {
-                        InfoItem(icon = Icons.Default.Star, title = "当前排位", value = "${global.rank.rankName} ${global.rank.rankDiv}", valueColor = MaterialTheme.colorScheme.secondary)
+                        InfoItem(
+                            icon = Icons.Default.Star,
+                            title = "当前排位",
+                            value = "${global.rank.rankName} ${global.rank.rankDiv}",
+                            valueColor = MaterialTheme.colorScheme.secondary
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "排位分: ${global.rank.rankScore}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(end = 4.dp))
+                        Text(
+                            text = "排位分: ${global.rank.rankScore}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
                     }
                 }
             }
@@ -339,7 +468,12 @@ fun PlayerResultCard(playerData: PlayerResponse) {
 
             if (global.bans?.isActive == true) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer), modifier = Modifier.fillMaxWidth()) {
-                    Text(text = "⚠️ 该账号已被封禁 (原因: ${global.bans.last_banReason})", color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "⚠️ 该账号已被封禁 (原因: ${global.bans.last_banReason})",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(8.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -347,7 +481,12 @@ fun PlayerResultCard(playerData: PlayerResponse) {
             if (legends?.selected != null) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "当前选用: ${legends.selected.LegendName}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = "当前选用: ${legends.selected.LegendName}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         val trackers = legends.selected.data
                         if (trackers.isNullOrEmpty()) {
@@ -370,16 +509,15 @@ fun PlayerResultCard(playerData: PlayerResponse) {
 @Composable
 fun InfoItem(icon: ImageVector, title: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(imageVector = icon, contentDescription = title, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(6.dp))
         Column {
-            Text(text = title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text(text = title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
             Text(text = value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = valueColor)
         }
     }
 }
 
-// ================= 2. 地图轮换页面 =================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapRotationScreen(viewModel: ApexViewModel) {
@@ -423,7 +561,6 @@ fun MapCard(title: String, mapMode: MapMode?) {
     }
 }
 
-// ================= 3. 猎杀者门槛页面 =================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PredatorScreen(viewModel: ApexViewModel) {
@@ -469,8 +606,5 @@ fun PredatorScreen(viewModel: ApexViewModel) {
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
-
-
-
 
 

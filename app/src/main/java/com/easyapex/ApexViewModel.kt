@@ -39,10 +39,20 @@ sealed class UpdateState {
         val downloadUrl: String,
         val fileSize: Long
     ) : UpdateState()
-    data class DownloadInProgress(val progress: Int, val downloadedBytes: Long, val totalBytes: Long) : UpdateState()
+    data class DownloadInProgress(
+        val progress: Int,
+        val downloadedBytes: Long,
+        val totalBytes: Long
+    ) : UpdateState()
     object UpToDate : UpdateState()
     data class Error(val message: String) : UpdateState()
 }
+
+data class VersionInfo(
+    val currentVersion: String,
+    val latestVersion: String? = null,
+    val description: String = "点击检查更新按钮查看是否有新版本"
+)
 
 class ApexViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -51,7 +61,7 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("apex_prefs", Context.MODE_PRIVATE)
     private val historyKey = "search_history"
     private val themeKey = "app_theme_preference"
-    private val pinnedPlayerKey = "pinned_player_name"
+    private val pinnedPlayersKey = "pinned_player_names"
 
     private val _currentTheme = MutableStateFlow(AppTheme.DYNAMIC)
     val currentTheme: StateFlow<AppTheme> = _currentTheme.asStateFlow()
@@ -62,8 +72,8 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     private val _playerState = MutableStateFlow<ApiState<PlayerResponse>>(ApiState.Idle)
     val playerState: StateFlow<ApiState<PlayerResponse>> = _playerState.asStateFlow()
 
-    private val _pinnedPlayerName = MutableStateFlow(prefs.getString(pinnedPlayerKey, null))
-    val pinnedPlayerName: StateFlow<String?> = _pinnedPlayerName.asStateFlow()
+    private val _pinnedPlayers = MutableStateFlow(loadPinnedPlayers())
+    val pinnedPlayers: StateFlow<List<String>> = _pinnedPlayers.asStateFlow()
 
     private val _mapState = MutableStateFlow<ApiState<MapRotationResponse>>(ApiState.Idle)
     val mapState: StateFlow<ApiState<MapRotationResponse>> = _mapState.asStateFlow()
@@ -75,6 +85,8 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
     val versionName: StateFlow<String> = MutableStateFlow(getCurrentVersionName())
+    private val _versionInfo = MutableStateFlow(VersionInfo(currentVersion = getCurrentVersionName()))
+    val versionInfo: StateFlow<VersionInfo> = _versionInfo.asStateFlow()
 
     init {
         loadHistory()
@@ -84,7 +96,7 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     private fun getCurrentVersionName(): String {
         val context = getApplication<Application>()
         val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        return packageInfo.versionName ?: "1.0.8"
+        return packageInfo.versionName ?: "1.0.11"
     }
 
     private fun loadTheme() {
@@ -100,6 +112,16 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadHistory() {
         val historyStr = prefs.getString(historyKey, "") ?: ""
         _searchHistory.value = if (historyStr.isBlank()) emptyList() else historyStr.split(",")
+    }
+
+    private fun loadPinnedPlayers(): List<String> {
+        val pinnedStr = prefs.getString(pinnedPlayersKey, "") ?: ""
+        return if (pinnedStr.isBlank()) emptyList() else pinnedStr.split(",")
+    }
+
+    private fun savePinnedPlayers(players: List<String>) {
+        _pinnedPlayers.value = players
+        prefs.edit().putString(pinnedPlayersKey, players.joinToString(",")).apply()
     }
 
     private fun saveToHistory(playerName: String) {
@@ -121,9 +143,18 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
 
     fun togglePinnedPlayer(playerName: String) {
         val normalized = playerName.trim()
-        val newValue = if (_pinnedPlayerName.value == normalized) null else normalized
-        _pinnedPlayerName.value = newValue
-        prefs.edit().putString(pinnedPlayerKey, newValue).apply()
+        val current = _pinnedPlayers.value.toMutableList()
+        if (current.contains(normalized)) {
+            current.remove(normalized)
+        } else {
+            current.add(0, normalized)
+        }
+        savePinnedPlayers(current.distinct())
+    }
+
+    fun removePinnedPlayer(playerName: String) {
+        val updated = _pinnedPlayers.value.filterNot { it == playerName.trim() }
+        savePinnedPlayers(updated)
     }
 
     fun searchPlayer(playerInput: String, platform: String = "PC") {
@@ -185,10 +216,16 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     fun checkForUpdate() {
         viewModelScope.launch(Dispatchers.IO) {
             _updateState.value = UpdateState.Checking
+            _versionInfo.value = _versionInfo.value.copy(description = "正在检查更新...")
             try {
                 val latestVersion = fetchLatestVersionFromRedirect()
                 val currentVersion = getCurrentVersionName().removePrefix("v")
                 if (latestVersion != null && isVersionNewer(latestVersion, currentVersion)) {
+                    _versionInfo.value = VersionInfo(
+                        currentVersion = currentVersion,
+                        latestVersion = latestVersion,
+                        description = "发现新版本 v$latestVersion，可立即下载更新。"
+                    )
                     _updateState.value = UpdateState.NewUpdateAvailable(
                         version = latestVersion,
                         releaseName = "EasyApex v$latestVersion",
@@ -197,9 +234,15 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
                         fileSize = 0L
                     )
                 } else {
+                    _versionInfo.value = VersionInfo(
+                        currentVersion = currentVersion,
+                        latestVersion = currentVersion,
+                        description = "当前已是最新版本。"
+                    )
                     _updateState.value = UpdateState.UpToDate
                 }
             } catch (e: Exception) {
+                _versionInfo.value = _versionInfo.value.copy(description = "检查更新失败，请稍后再试。")
                 _updateState.value = UpdateState.Error(e.localizedMessage ?: "检查更新失败，请稍后再试")
             }
         }
@@ -282,7 +325,11 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
 
                     val bytesDownloaded = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
                     val bytesTotal = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-                    val progress = if (bytesTotal > 0) (bytesDownloaded * 100 / bytesTotal).toInt() else 0
+                    val progress = when {
+                        bytesTotal > 0 -> (bytesDownloaded * 100 / bytesTotal).toInt().coerceIn(0, 100)
+                        bytesDownloaded > 0 -> 1
+                        else -> 0
+                    }
                     _updateState.value = UpdateState.DownloadInProgress(progress, bytesDownloaded, bytesTotal)
 
                     when (it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))) {
