@@ -11,8 +11,8 @@ android {
         applicationId = "com.easyapex"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.0.9"
+        versionCode = 7
+        versionName = "1.0.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -76,6 +76,7 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
+
 
 
 
