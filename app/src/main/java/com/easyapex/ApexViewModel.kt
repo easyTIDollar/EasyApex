@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 
 sealed class ApiState<out T> {
     object Idle : ApiState<Nothing>()
@@ -170,32 +172,47 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun checkForUpdate() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _updateState.value = UpdateState.Checking
             try {
-                val latestRelease = GitHubApiClient.api.getLatestRelease()
-                val latestVersion = latestRelease.tag_name.removePrefix("v")
+                val latestVersion = fetchLatestVersionFromRedirect()
                 val currentVersion = getCurrentVersionName().removePrefix("v")
-                if (isVersionNewer(latestVersion, currentVersion)) {
-                    val apkAsset = latestRelease.assets.find { it.name.endsWith(".apk", ignoreCase = true) }
-                    if (apkAsset != null) {
-                        _updateState.value = UpdateState.NewUpdateAvailable(
-                            version = latestVersion,
-                            releaseName = latestRelease.name.ifBlank { latestRelease.tag_name },
-                            releaseNotes = latestRelease.body.ifBlank { "暂无更新说明" },
-                            downloadUrl = apkAsset.browser_download_url,
-                            fileSize = apkAsset.size.toLong()
-                        )
-                    } else {
-                        _updateState.value = UpdateState.Error("发现新版本，但当前 Release 未附带 APK 安装包")
-                    }
+                if (latestVersion != null && isVersionNewer(latestVersion, currentVersion)) {
+                    _updateState.value = UpdateState.NewUpdateAvailable(
+                        version = latestVersion,
+                        releaseName = "EasyApex v$latestVersion",
+                        releaseNotes = "发现新版本，点击后将直接下载 GitHub Release 安装包。",
+                        downloadUrl = getReleaseDownloadUrl(latestVersion),
+                        fileSize = 0L
+                    )
                 } else {
                     _updateState.value = UpdateState.UpToDate
                 }
             } catch (e: Exception) {
-                _updateState.value = UpdateState.Error(e.localizedMessage ?: "检查更新失败，请检查网络连接")
+                _updateState.value = UpdateState.Error(e.localizedMessage ?: "检查更新失败，请稍后再试")
             }
         }
+    }
+
+    private fun fetchLatestVersionFromRedirect(): String? {
+        val connection = URL("https://github.com/easyTIDollar/EasyApex/releases/latest").openConnection() as HttpURLConnection
+        return try {
+            connection.instanceFollowRedirects = false
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+            connection.setRequestProperty("User-Agent", "EasyApex-Update-Checker")
+            connection.connect()
+            val location = connection.getHeaderField("Location") ?: return null
+            val tag = location.substringAfterLast("/")
+            tag.removePrefix("v").takeIf { it.isNotBlank() }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun getReleaseDownloadUrl(version: String): String {
+        return "https://github.com/easyTIDollar/EasyApex/releases/download/v$version/app-release.apk"
     }
 
     private fun isVersionNewer(latest: String, current: String): Boolean {

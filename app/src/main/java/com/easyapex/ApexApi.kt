@@ -5,9 +5,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// ================= 1. 数据模型 =================
-
-// --- 玩家数据 ---
 data class PlayerResponse(
     val global: GlobalStats?,
     val realtime: RealtimeStats?,
@@ -15,9 +12,15 @@ data class PlayerResponse(
 )
 
 data class GlobalStats(
-    val name: String, val uid: Long, val level: Int, val levelPrestige: Int?,
-    val platform: String, val rank: RankStats?, val bans: BanStats?
+    val name: String,
+    val uid: Long,
+    val level: Int,
+    val levelPrestige: Int?,
+    val platform: String,
+    val rank: RankStats?,
+    val bans: BanStats?
 )
+
 data class RankStats(val rankScore: Int, val rankName: String, val rankDiv: Int)
 data class BanStats(val isActive: Boolean, val last_banReason: String)
 data class RealtimeStats(val lobbyState: String, val isOnline: Int, val isInGame: Int, val selectedLegend: String)
@@ -25,40 +28,37 @@ data class LegendsStats(val selected: SelectedLegend?)
 data class SelectedLegend(val LegendName: String, val data: List<TrackerData>?)
 data class TrackerData(val name: String, val value: Float)
 
-// --- ?? 新增：名字转 UID 响应数据 ---
 data class UidResponse(
     val name: String?,
     val uid: String?
 )
 
-// --- 地图轮换数据 ---
 data class MapRotationResponse(
     val battle_royale: MapMode?,
     val ranked: MapMode?
 )
+
 data class MapMode(
     val current: MapInfo?,
     val next: MapInfo?
 )
+
 data class MapInfo(
     val map: String,
     val remainingTimer: String?
 )
 
-// --- 猎杀者门槛数据 ---
 data class PredatorResponse(
     val RP: Map<String, PredatorDetails>?
 )
+
 data class PredatorDetails(
     val foundRank: Int,
     val `val`: Int,
     val totalMastersAndPreds: Int
 )
 
-
-// ================= 2. API 接口定义 =================
 interface ApexApi {
-    // ?? 1. 通过名字查询 (兜底备用)
     @GET("bridge")
     suspend fun getPlayerProfileByName(
         @Query("auth") auth: String,
@@ -66,7 +66,6 @@ interface ApexApi {
         @Query("platform") platform: String
     ): PlayerResponse
 
-    // ?? 2. 通过 UID 查询 (最稳定)
     @GET("bridge")
     suspend fun getPlayerProfileByUid(
         @Query("auth") auth: String,
@@ -74,7 +73,6 @@ interface ApexApi {
         @Query("platform") platform: String
     ): PlayerResponse
 
-    // ?? 3. 将 EA 名字转换为底层 UID
     @GET("nametouid")
     suspend fun nameToUid(
         @Query("auth") auth: String,
@@ -87,10 +85,8 @@ interface ApexApi {
 
     @GET("predator")
     suspend fun getPredator(@Query("auth") auth: String): PredatorResponse
-
 }
 
-// ================= 3. Retrofit 客户端 =================
 object RetrofitClient {
     private const val BASE_URL = "https://api.mozambiquehe.re/"
 
@@ -101,39 +97,4 @@ object RetrofitClient {
             .build()
             .create(ApexApi::class.java)
     }
-}
-
-// ================= 4. GitHub Release 数据模型 =================
-data class GitHubRelease(
-    val tag_name: String,
-    val name: String,
-    val body: String,
-    val html_url: String,
-    val created_at: String,
-    val assets: List<GitHubReleaseAsset>
-)
-
-data class GitHubReleaseAsset(
-    val name: String,
-    val browser_download_url: String,
-    val size: Int
-)
-
-// ================= 5. GitHub API 客户端 =================
-object GitHubApiClient {
-    private const val BASE_URL = "https://api.github.com/"
-
-    val api: ApexGithubApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApexGithubApi::class.java)
-    }
-}
-
-interface ApexGithubApi {
-    /** 获取最新版本 Release 信息 */
-    @GET("repos/easyTIDollar/EasyApex/releases/latest")
-    suspend fun getLatestRelease(): GitHubRelease
 }
