@@ -23,6 +23,22 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Validate tag matches app version
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          APP_VERSION=$(grep 'versionName = ' app/build.gradle.kts | head -n 1 | sed -E 's/.*versionName = "([^"]+)".*/\1/')
+          echo "Tag version: ${TAG_VERSION}"
+          echo "App version: ${APP_VERSION}"
+          if [ -z "$APP_VERSION" ]; then
+            echo "Failed to read versionName from app/build.gradle.kts"
+            exit 1
+          fi
+          if [ "$TAG_VERSION" != "$APP_VERSION" ]; then
+            echo "Tag version does not match app versionName"
+            exit 1
+          fi
+
       - name: Grant Gradle execute permission
         run: chmod +x ./gradlew
 
