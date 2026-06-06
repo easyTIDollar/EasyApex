@@ -49,7 +49,7 @@ app/
 - **targetSdk**：34
 - **compileSdk**：34
 - **versionCode**：2
-- **versionName**：`1.0.8`
+- **versionName**：`1.0.9`
 - **Apex API 基地址**：`https://api.mozambiquehe.re/`
 
 ## 快速开始
@@ -139,6 +139,7 @@ app/
 - [Apex Legends API](https://github.com/mozambiquehe/re-acting-apex) 或相关社区接口项目
 - Jetpack Compose
 - Material 3
+
 
 
 

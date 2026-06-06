@@ -51,6 +51,7 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("apex_prefs", Context.MODE_PRIVATE)
     private val historyKey = "search_history"
     private val themeKey = "app_theme_preference"
+    private val pinnedPlayerKey = "pinned_player_name"
 
     private val _currentTheme = MutableStateFlow(AppTheme.DYNAMIC)
     val currentTheme: StateFlow<AppTheme> = _currentTheme.asStateFlow()
@@ -60,6 +61,9 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _playerState = MutableStateFlow<ApiState<PlayerResponse>>(ApiState.Idle)
     val playerState: StateFlow<ApiState<PlayerResponse>> = _playerState.asStateFlow()
+
+    private val _pinnedPlayerName = MutableStateFlow(prefs.getString(pinnedPlayerKey, null))
+    val pinnedPlayerName: StateFlow<String?> = _pinnedPlayerName.asStateFlow()
 
     private val _mapState = MutableStateFlow<ApiState<MapRotationResponse>>(ApiState.Idle)
     val mapState: StateFlow<ApiState<MapRotationResponse>> = _mapState.asStateFlow()
@@ -80,7 +84,7 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
     private fun getCurrentVersionName(): String {
         val context = getApplication<Application>()
         val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        return packageInfo.versionName ?: "1.0.6"
+        return packageInfo.versionName ?: "1.0.8"
     }
 
     private fun loadTheme() {
@@ -113,6 +117,13 @@ class ApexViewModel(application: Application) : AndroidViewModel(application) {
         val updatedList = _searchHistory.value.filterNot { it == playerName }
         _searchHistory.value = updatedList
         prefs.edit().putString(historyKey, updatedList.joinToString(",")).apply()
+    }
+
+    fun togglePinnedPlayer(playerName: String) {
+        val normalized = playerName.trim()
+        val newValue = if (_pinnedPlayerName.value == normalized) null else normalized
+        _pinnedPlayerName.value = newValue
+        prefs.edit().putString(pinnedPlayerKey, newValue).apply()
     }
 
     fun searchPlayer(playerInput: String, platform: String = "PC") {
