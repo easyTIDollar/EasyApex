@@ -66,7 +66,7 @@ EasyApex/
 - **应用 ID**：`com.easyapex`
 - **最低 SDK**：26
 - **目标 / 编译 SDK**：34
-- **当前版本**：`versionCode = 9`，`versionName = "1.0.12"`
+- **当前版本**：`versionCode = 10`，`versionName = "1.0.13"`
 - **API 基地址**：`https://api.mozambiquehe.re/`
 
 ## 代码约定
@@ -140,6 +140,7 @@ EasyApex/
 1. 检查 `ApexApi.kt` 中 GitHub Release 数据模型和接口
 2. 检查 `ApexViewModel.kt` 中版本比较、下载与状态流逻辑
 3. 如涉及权限或安装流程，同时检查 `AndroidManifest.xml`
+
 
 
 
